@@ -189,9 +189,12 @@ jobs:
         shell: bash
         run: |
           sed -i '/dpiAware/d' res/manifest.xml
+          # o exe precisa ter o nome do app ANTES de empacotar: o instalador embutido
+          # copia a pasta como está e os atalhos/serviço apontam para "{app_name}.exe"
+          mv ./rustdesk/rustdesk.exe "./rustdesk/${{ env.BEZALEL_APP_NAME }}.exe"
           pushd ./libs/portable
           pip3 install -r requirements.txt
-          python3 ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          python3 ./generate.py -f ../../rustdesk/ -o . -e "../../rustdesk/${{ env.BEZALEL_APP_NAME }}.exe"
           popd
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/BezalelRemote-${{ env.VERSION }}-x86_64.exe
@@ -207,8 +210,6 @@ jobs:
 
       - name: Build msi
         run: |
-          # o gerador do MSI espera o exe com o nome do app (padrao dos clientes customizados)
-          Move-Item ./rustdesk/rustdesk.exe "./rustdesk/${{ env.BEZALEL_APP_NAME }}.exe" -Force
           pushd ./res/msi
           python preprocess.py --arp --app-name "${{ env.BEZALEL_APP_NAME }}" --manufacturer "Bezalel" -d ../../rustdesk
           nuget restore msi.sln
